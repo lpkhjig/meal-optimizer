@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>급식 식재료 최적화</title>
+<style>
+:root{--bg:#f4f7f3;--card:#fff;--ink:#20312b;--muted:#66756e;--green:#267653;--green2:#e6f4eb;--line:#dfe8e1;--orange:#f2a65a;--red:#b84c4c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+header{background:linear-gradient(120deg,#174f3a,#2f8b60);color:white;padding:34px 20px 42px}
+.wrap{max-width:1100px;margin:auto;padding:0 18px}header .wrap{padding:0 18px}
+.eyebrow{font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}h1{font-size:clamp(1.8rem,4vw,2.8rem);margin:.3rem 0}.lead{max-width:720px;color:#e1f1e7;margin:0}
+main{margin-top:-20px;padding-bottom:48px}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 8px 24px #1a3b2910;margin-bottom:18px}
+h2{font-size:1.12rem;margin:0 0 14px}h3{font-size:1rem;margin:0 0 8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:.86rem;color:var(--muted)}
+input{width:100%;border:1px solid #ccd9cf;border-radius:9px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid #9dd5b2;border-color:var(--green)}
+small,.muted{color:var(--muted);font-size:.84rem}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line);vertical-align:middle}th{font-size:.78rem;color:var(--muted);font-weight:650}td input{min-width:74px;padding:7px}
+.ingredient{font-weight:650;white-space:nowrap}.unit{font-size:.75rem;color:var(--muted)}
+button{border:0;border-radius:11px;background:var(--green);color:white;font:inherit;font-weight:700;padding:13px 18px;cursor:pointer;width:100%;transition:transform .12s,background .12s}
+button:hover{background:#1d6243;transform:translateY(-1px)}button:focus-visible{outline:3px solid #9dd5b2;outline-offset:2px}
+.note{background:#fff8e9;border:1px solid #f2dfb5;color:#75531b;border-radius:11px;padding:12px;font-size:.85rem;margin-top:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#f5f9f6;border-radius:12px;padding:14px}.stat span{display:block;color:var(--muted);font-size:.8rem}.stat strong{font-size:1.45rem}
+.progressrow{display:grid;grid-template-columns:90px 1fr 65px;gap:9px;align-items:center;margin:12px 0;font-size:.86rem}.bar{height:9px;background:#e9efeb;border-radius:99px;overflow:hidden}.fill{height:100%;background:#319666;border-radius:99px;width:0}
+.resulttable td:last-child,.resulttable th:last-child{text-align:right}.hidden{display:none}.status{padding:12px;border-radius:10px;background:var(--green2);margin-top:12px;font-size:.9rem}
+footer{color:var(--muted);font-size:.82rem;padding:0 0 32px}.tag{display:inline-block;background:#e6f4eb;color:#216b47;padding:4px 8px;border-radius:999px;font-size:.75rem;font-weight:700;margin-bottom:8px}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.grid2{grid-template-columns:1fr 1fr}.card{padding:17px}.progressrow{grid-template-columns:78px 1fr 58px}}
+@media(max-width:420px){.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}th,td{padding:7px 5px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="eyebrow">School meal planning · Prototype</div>
+<h1>급식 식재료 최적화</h1>
+<p class="lead">예산과 영양 목표를 입력하면 식재료 조합을 계산해 봅니다. 가격·영양값·선호도는 직접 수정할 수 있어요.</p>
+</div></header>
+<main class="wrap">
+<div class="layout">
+<section>
+<div class="card">
+<h2>01 · 예산 및 목표</h2>
+<div class="grid2">
+<div class="field"><label for="budget">전체 예산 (원)</label><input id="budget" type="number" min="0" step="1000" value="300000"></div>
+<div class="field"><label for="people">급식 인원 (명)</label><input id="people" type="number" min="1" step="1" value="100"></div>
+<div class="field"><label for="step">계산 단위 (1인당 g)</label><input id="step" type="number" min="10" max="50" step="10" value="10"></div>
+<div class="field"><label for="maxportion">식재료 총량 상한 (1인당 g)</label><input id="maxportion" type="number" min="100" step="50" value="500"></div>
+<div class="field"><label for="basePork">돼지고기 기본량 (1인당 g)</label><input id="basePork" type="number" min="0" step="10" value="50"></div>
+<div class="field"><label for="baseRice">쌀 기본량 (1인당 g, 생쌀)</label><input id="baseRice" type="number" min="0" step="10" value="100"></div>
+</div>
+<p class="muted">영양 목표는 1인 기준입니다. 예산은 전체 인원 기준으로 계산합니다.</p>
+<div class="grid2">
+<div class="field"><label for="goalProtein">단백질 목표 (g)</label><input id="goalProtein" type="number" min="1" value="30"></div>
+<div class="field"><label for="goalCalcium">칼슘 목표 (mg)</label><input id="goalCalcium" type="number" min="1" value="200"></div>
+<div class="field"><label for="goalIron">철분 목표 (mg)</label><input id="goalIron" type="number" min="0.1" step="0.1" value="3.5"></div>
+<div class="field"><label for="goalCarbs">탄수화물 목표 (g)</label><input id="goalCarbs" type="number" min="1" value="60"></div>
+<div class="field"><label for="goalFat">지방 목표 (g)</label><input id="goalFat" type="number" min="1" value="20"></div>
+</div>
+</div>
+<div class="card">
+<h2>02 · 식재료 데이터</h2>
+<p class="muted">영양 성분은 각 식재료 100g 기준의 예시값입니다. 수업 자료나 제품 표시값에 맞춰 수정하세요.</p>
+<div class="tablewrap"><table id="ingredientsTable">
+<thead><tr><th>식재료</th><th>가격/100g<br>(원)</th><th>단백질<br>(g)</th><th>칼슘<br>(mg)</th><th>철분<br>(mg)</th><th>탄수화물<br>(g)</th><th>지방<br>(g)</th><th>선호도<br>(1–5)</th></tr></thead>
+<tbody>
+<tr data-name="돼지고기"><td class="ingredient">돼지고기</td><td><input type="number" min="0" value="1500" aria-label="돼지고기 가격"></td><td><input type="number" min="0" step=".1" value="20" aria-label="돼지고기 단백질"></td><td><input type="number" min="0" step=".1" value="10" aria-label="돼지고기 칼슘"></td><td><input type="number" min="0" step=".1" value="1" aria-label="돼지고기 철분"></td><td><input type="number" min="0" step=".1" value="0" aria-label="돼지고기 탄수화물"></td><td><input type="number" min="0" step=".1" value="7" aria-label="돼지고기 지방"></td><td><input type="number" min="1" max="5" value="5" aria-label="돼지고기 선호도"></td></tr>
+<tr data-name="두부"><td class="ingredient">두부</td><td><input type="number" min="0" value="600" aria-label="두부 가격"></td><td><input type="number" min="0" step=".1" value="8" aria-label="두부 단백질"></td><td><input type="number" min="0" step=".1" value="120" aria-label="두부 칼슘"></td><td><input type="number" min="0" step=".1" value="1.5" aria-label="두부 철분"></td><td><input type="number" min="0" step=".1" value="2" aria-label="두부 탄수화물"></td><td><input type="number" min="0" step=".1" value="4.8" aria-label="두부 지방"></td><td><input type="number" min="1" max="5" value="3" aria-label="두부 선호도"></td></tr>
+<tr data-name="콩나물"><td class="ingredient">콩나물</td><td><input type="number" min="0" value="300" aria-label="콩나물 가격"></td><td><input type="number" min="0" step=".1" value="4" aria-label="콩나물 단백질"></td><td><input type="number" min="0" step=".1" value="30" aria-label="콩나물 칼슘"></td><td><input type="number" min="0" step=".1" value=".8" aria-label="콩나물 철분"></td><td><input type="number" min="0" step=".1" value="3.6" aria-label="콩나물 탄수화물"></td><td><input type="number" min="0" step=".1" value="1.5" aria-label="콩나물 지방"></td><td><input type="number" min="1" max="5" value="2" aria-label="콩나물 선호도"></td></tr>
+<tr data-name="쌀(생쌀)"><td class="ingredient">쌀(생쌀)</td><td><input type="number" min="0" value="300" aria-label="쌀 가격"></td><td><input type="number" min="0" step=".1" value="7" aria-label="쌀 단백질"></td><td><input type="number" min="0" step=".1" value="10" aria-label="쌀 칼슘"></td><td><input type="number" min="0" step=".1" value=".8" aria-label="쌀 철분"></td><td><input type="number" min="0" step=".1" value="78" aria-label="쌀 탄수화물"></td><td><input type="number" min="0" step=".1" value=".7" aria-label="쌀 지방"></td><td><input type="number" min="1" max="5" value="4" aria-label="쌀 선호도"></td></tr>
+</tbody></table></div>
+<div class="note">주의: 이 웹사이트는 학교 과제용 프로토타입입니다. 기본 영양값은 예시이며, 실제 식단에 사용하기 전에는 신뢰할 수 있는 영양 자료와 조리 후 중량을 확인해야 합니다.</div>
+</div>
+<button id="run">최적 식재료 조합 계산하기</button>
+</section>
+<section>
+<div class="card">
+<span class="tag">계산 결과</span><h2>03 · 추천 조합</h2>
+<div id="empty"><p class="muted">입력값을 확인한 뒤 계산 버튼을 누르면 결과가 여기에 표시됩니다.</p></div>
+<div id="results" class="hidden">
+<div class="stats">
+<div class="stat"><span>예상 총비용</span><strong id="totalCost">-</strong></div>
+<div class="stat"><span>예산 사용률</span><strong id="budgetRate">-</strong></div>
+<div class="stat"><span>1인당 식재료량</span><strong id="portion">-</strong></div>
+<div class="stat"><span>목표 충족 평균</span><strong id="score">-</strong></div>
+</div>
+<h3 style="margin-top:20px">식재료 사용량</h3>
+<div class="tablewrap"><table class="resulttable"><thead><tr><th>식재료</th><th>1인당</th><th>전체</th><th>비용</th></tr></thead><tbody id="amountRows"></tbody></table></div>
+<h3 style="margin-top:20px">영양 목표 충족률</h3>
+<div id="nutrients"></div>
+<div id="message" class="status" role="status"></div>
+</div>
+</div>
+<div class="card">
+<h2>이 모델은 어떻게 계산하나요?</h2>
+<p>먼저 모든 식재료에 1인당 최소량을 배정한 뒤, 남은 예산과 총량 안에서 단백질·칼슘·철분·탄수화물·지방의 목표 충족률이 고르게 개선되도록 탐색합니다. 특히 충족률이 낮은 영양소를 더 우선하며, 목표를 이미 채운 영양소는 100%를 넘겨도 추가 점수를 받지 않습니다.</p>
+<p class="muted">따라서 이는 정밀한 선형계획법 솔버의 전역 최적해 보장이 아닌, 브라우저에서 작동하는 탐욕형 근사 알고리즘입니다. 결과와 데이터 가정을 발표할 때 이 점을 밝혀 주세요.</p>
+</div>
+</section>
+</div>
+</main>
+<footer class="wrap">급식 식재료 최적화 · GitHub Pages용 정적 웹사이트 · 예시 데이터 포함</footer>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+function getIngredients(){
+  return [...document.querySelectorAll('#ingredientsTable tbody tr')].map(tr=>{
+    const v=[...tr.querySelectorAll('input')].map(i=>Number(i.value)||0);
+    return {name:tr.dataset.name, price:v[0], protein:v[1], calcium:v[2], iron:v[3], carbs:v[4], fat:v[5], preference:Math.min(5,Math.max(1,v[6]))};
+  });
+}
+function optimize(){
+ const budget=Number($('budget').value), people=Math.max(1,Math.floor(Number($('people').value)||1));
+ const step=Math.max(10,Number($('step').value)||10), maxPortion=Math.max(step,Number($('maxportion').value)||500);
+ const basePork=Math.max(0,Number($('basePork').value)||0), baseRice=Math.max(0,Number($('baseRice').value)||0);
+ const ingredients=getIngredients();
+ const goals={protein:Number($('goalProtein').value),calcium:Number($('goalCalcium').value),iron:Number($('goalIron').value),carbs:Number($('goalCarbs').value),fat:Number($('goalFat').value)};
+ if(!Number.isFinite(budget)||budget<=0||Object.values(goals).some(x=>!Number.isFinite(x)||x<=0)){alert('예산과 모든 영양 목표를 0보다 크게 입력해 주세요.');return;}
+ const keys=Object.keys(goals), qty=ingredients.map(()=>0), maxUnits=Math.floor(maxPortion/step);
+ const unitCost=ingredients.map(x=>x.price*step/100*people);
+ const unitNutrients=ingredients.map(x=>Object.fromEntries(keys.map(k=>[k,x[k]*step/100])));
+ const current=()=>Object.fromEntries(keys.map(k=>[k,ingredients.reduce((s,x,i)=>s+x[k]*qty[i]*step/100,0)]));
+ let totalCost=0, totalUnits=0, baseWarning='';
+ const porkIndex=ingredients.findIndex(x=>x.name==='돼지고기');
+ const riceIndex=ingredients.findIndex(x=>x.name==='쌀(생쌀)');
+ // First reserve requested pork and rice amounts. Quantities are rounded down to the selected calculation step.
+ for(const target of [{index:porkIndex,grams:basePork},{index:riceIndex,grams:baseRice}]){
+   if(target.index<0 || target.grams<=0) continue;
+   const wanted=Math.floor(target.grams/step);
+   for(let u=0;u<wanted;u++){
+     if(totalUnits>=maxUnits || totalCost+unitCost[target.index]>budget){
+       baseWarning='예산 또는 총량 제한 때문에 돼지고기·쌀 기본량을 모두 배정하지 못했어요. 예산을 늘리거나 기본량을 낮춰 보세요.';
+       break;
+     }
+     qty[target.index]++; totalUnits++; totalCost+=unitCost[target.index];
+   }
+ }
+ // Fill remaining budget with ingredients that improve the least-fulfilled nutrient targets.
+ while(totalUnits<maxUnits && totalCost<budget){
+   const now=current();
+   let best=-1,bestScore=0;
+   for(let i=0;i<ingredients.length;i++){
+     if(qty[i]>=maxUnits || ingredients[i].price<=0) continue;
+     const cost=unitCost[i];
+     if(totalCost+cost>budget) continue;
+     let gain=0;
+     for(const k of keys){
+       const before=Math.min(1,now[k]/goals[k]);
+       const after=Math.min(1,(now[k]+unitNutrients[i][k])/goals[k]);
+       gain+=(1-before)*(1-before)-(1-after)*(1-after);
+     }
+     const score=gain/(cost/Math.max(1,budget))+ingredients[i].preference*0.00001;
+     if(score>bestScore+1e-12){bestScore=score;best=i;}
+   }
+   if(best<0 || bestScore<=0) break;
+   qty[best]++;totalUnits++;totalCost+=unitCost[best];
+   const n=current();
+   if(keys.every(k=>n[k]>=goals[k])) break;
+ }
+ const n=current(), usedGrams=qty.reduce((s,q)=>s+q*step,0);
+ const avg=keys.reduce((s,k)=>s+Math.min(1,n[k]/goals[k]),0)/keys.length;
+ $('empty').classList.add('hidden');$('results').classList.remove('hidden');
+ $('totalCost').textContent=fmt(totalCost)+'원';$('budgetRate').textContent=(totalCost/budget*100).toFixed(1)+'%';
+ $('portion').textContent=fmt(usedGrams)+'g';$('score').textContent=(avg*100).toFixed(1)+'%';
+ $('amountRows').innerHTML=ingredients.map((x,i)=>`<tr><td>${x.name}</td><td>${fmt(qty[i]*step)}g</td><td>${fmt(qty[i]*step*people)}g</td><td>${fmt(unitCost[i]*qty[i])}원</td></tr>`).join('');
+ $('nutrients').innerHTML=keys.map(k=>{const val=n[k],pct=val/goals[k]*100;const labels={protein:'단백질',calcium:'칼슘',iron:'철분',carbs:'탄수화물',fat:'지방'};const unit=k==='calcium'?'mg':'g';return `<div class="progressrow"><span>${labels[k]}</span><div class="bar"><div class="fill" style="width:${Math.min(100,pct)}%"></div></div><span>${pct.toFixed(0)}%</span></div><p class="muted" style="margin:-5px 0 8px 99px">${val.toFixed(1)} / ${goals[k]} ${unit}</p>`}).join('');
+ const unmet=keys.filter(k=>n[k]<goals[k]), labels={protein:'단백질',calcium:'칼슘',iron:'철분',carbs:'탄수화물',fat:'지방'};
+ $('message').textContent=(baseWarning?baseWarning+' ':'')+(unmet.length?`남은 예산으로 목표를 모두 채우지 못했어요: ${unmet.map(k=>labels[k]).join(', ')}. 예산·목표·식재료 정보를 조정해 다시 계산해 보세요.`:'설정한 영양 목표를 모두 충족했어요. 실제 식단에 적용하기 전에는 영양값과 조리 후 중량을 확인하세요.');
+}
+$('run').addEventListener('click',optimize);
+</script>
+</body>
+</html>
